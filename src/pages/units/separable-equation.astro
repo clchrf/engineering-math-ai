@@ -1,0 +1,759 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+function tex(src: string, display = false) {
+	return katex.renderToString(src, { throwOnError: false, displayMode: display });
+}
+
+const eqGeneral = tex('\\frac{dy}{dx} = f(x,y)');
+const eqSeparableForm = tex('\\frac{dy}{dx} = g(x)h(y)');
+const eqCoolingDE = tex('\\frac{dT(t)}{dt} = -k\\big(T(t) - R\\big)', true);
+const eqCoolingSol = tex('T(t) = R + (T_0 - R)\\,e^{-kt}', true);
+const eqProcedureStep1 = tex('\\frac{dy}{h(y)} = g(x)\\,dx', true);
+const eqProcedureStep2 = tex('\\int \\frac{dy}{h(y)} = \\int g(x)\\,dx', true);
+const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
+---
+
+<BaseLayout title="可分離變數方程式 — 工程數學互動教材" unitTitle="可分離變數方程式">
+	<style>
+		section { margin: 2.5rem 0; }
+		h2 {
+			font-size: 1.05rem; font-weight: 700; letter-spacing: -0.005em;
+			display: flex; align-items: center; gap: 0.55rem; margin-bottom: 1.1rem; color: var(--fg);
+		}
+		h2::before {
+			content: ''; width: 7px; height: 7px; border-radius: 50%;
+			background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); flex-shrink: 0;
+		}
+		.card { padding: 1.35rem 1.6rem; }
+		.formula-block { text-align: center; margin: 1rem 0; overflow-x: auto; }
+		.katex-display { margin: 0.5em 0; }
+		.note { color: var(--muted); font-size: 0.88rem; }
+
+		/* Chart */
+		.chart-controls { display: grid; gap: 1rem; margin-bottom: 1.2rem; }
+		.control-row { display: grid; grid-template-columns: 140px 1fr 56px; align-items: center; gap: 0.7rem; }
+		.control-row label { font-size: 0.85rem; color: var(--muted); }
+		.control-row output {
+			font-size: 0.85rem; font-variant-numeric: tabular-nums; text-align: right;
+			font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; color: var(--fg);
+		}
+		input[type="range"] { width: 100%; accent-color: var(--accent); height: 4px; border-radius: 999px; }
+		svg#coolingChart { width: 100%; height: auto; background: var(--bg-canvas); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+		.axis-label { fill: var(--muted); font-size: 11px; }
+		.grid-line { stroke: var(--border); stroke-width: 1; }
+		.curve { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+		.room-line { stroke: var(--muted-soft); stroke-width: 1; stroke-dasharray: 4 4; }
+
+		/* Exercises */
+		.quiz-eq { font-size: 1.2rem; margin: 0.75rem 0 1.1rem; }
+		.btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+		button.choice, button.action {
+			border: 1px solid var(--border); background: var(--bg-canvas); color: var(--fg);
+			padding: 0.55rem 1.15rem; border-radius: 999px; cursor: pointer; font-size: 0.88rem;
+			font-weight: 600; transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+		}
+		button.action { background: var(--accent); color: white; border-color: var(--accent); }
+		button.choice:hover { border-color: var(--accent); background: var(--card-hover); }
+		button.action:hover { filter: brightness(1.06); }
+		button.choice:active, button.action:active { transform: scale(0.97); }
+		.feedback { margin-top: 0.9rem; font-weight: 600; min-height: 1.4em; font-size: 0.92rem; }
+		.feedback.correct { color: var(--good); }
+		.feedback.incorrect { color: var(--bad); }
+		.feedback.hint { color: var(--muted); font-weight: 400; }
+		.score { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+		.numeric-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.9rem; }
+		input#numAnswer {
+			border: 1px solid var(--border); background: var(--bg-canvas); color: var(--fg);
+			padding: 0.55rem 0.8rem; border-radius: var(--radius-sm); width: 8rem; font-size: 1rem;
+			font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+		}
+		input#numAnswer:focus { outline: none; border-color: var(--accent); }
+		.explain {
+			margin-top: 0.8rem; font-size: 0.85rem; color: var(--muted); display: none;
+			font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+		}
+		.explain.show { display: block; }
+
+		/* Solver: plain worksheet layout — a status list plus one input, same
+		   visual language as the practice sections below (no chat UI). */
+		.workbench-shell { display: grid; grid-template-columns: 220px 1fr; gap: 1.1rem; align-items: start; }
+		@media (max-width: 760px) { .workbench-shell { grid-template-columns: 1fr; } }
+
+		.workbench-state {
+			display: flex; flex-direction: column; gap: 0; position: sticky; top: 1rem;
+			background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+			padding: 0.9rem 1rem;
+		}
+		.state-title { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; font-weight: 700; }
+		.state-box {
+			padding: 0.55rem 0; border-bottom: 1px solid var(--border-soft); opacity: 0.5;
+			transition: opacity 0.2s ease;
+		}
+		.state-box:last-child { border-bottom: none; }
+		.state-box.active, .state-box.done { opacity: 1; }
+		.state-box-label {
+			font-size: 0.82rem; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; font-weight: 600;
+		}
+		.state-box.done .state-box-label { color: var(--good); }
+		.state-box.active .state-box-label { color: var(--fg); }
+		.state-box-content { margin-top: 0.3rem; font-size: 0.9rem; overflow-x: auto; color: var(--fg); }
+		.check-mark { font-size: 0.78rem; color: var(--good); font-weight: 700; visibility: hidden; }
+		.state-box.done .check-mark { visibility: visible; }
+
+		.solver-card { padding: 1.35rem 1.6rem; }
+		.solver-prompt { margin: 0 0 0.9rem; font-size: 0.94rem; }
+	</style>
+
+	<section>
+		<h2 data-i18n="s1Title">1. 什麼是可分離變數方程式</h2>
+		<p data-i18n="s1p1">一階微分方程式的一般形式是</p>
+		<div class="formula-block" set:html={eqGeneral} />
+		<p data-i18n="s1p2">如果右邊 f(x, y) 可以拆成一個只跟 x 有關的函數,乘上一個只跟 y 有關的函數,這個方程式就稱為「可分離變數」。</p>
+		<div class="formula-block" set:html={eqSeparableForm} />
+		<div class="card">
+			<p style="margin-top:0"><strong data-i18n="s1procTitle">解題步驟</strong></p>
+			<p data-i18n="s1proc1">步驟一：把 x、y 各自的項分離到等號兩側</p>
+			<div class="formula-block" set:html={eqProcedureStep1} />
+			<p data-i18n="s1proc2">步驟二：兩邊各自積分</p>
+			<div class="formula-block" set:html={eqProcedureStep2} />
+		</div>
+	</section>
+
+	<section>
+		<h2 data-i18n="s2Title">2. 範例：牛頓冷卻定律</h2>
+		<p data-i18n="s2p1">咖啡的溫度變化速率,正比於「目前溫度」與「室溫」之間的差距,這就是一個典型的可分離變數方程式：</p>
+		<div class="formula-block" set:html={eqCoolingDE} />
+		<p data-i18n="s2p2">解開之後可以得到溫度隨時間變化的公式：</p>
+		<div class="formula-block" set:html={eqCoolingSol} />
+		<p class="note" data-i18n="s2note">拖動下方滑桿,觀察初始溫度、室溫、冷卻係數 k 如何影響冷卻曲線。</p>
+
+		<div class="card">
+			<div class="chart-controls">
+				<div class="control-row">
+					<label for="ctrlT0" data-i18n="ctrlT0">初始溫度 T₀ (°C)</label>
+					<input type="range" id="ctrlT0" min="60" max="100" value="90" step="1" />
+					<output id="outT0">90</output>
+				</div>
+				<div class="control-row">
+					<label for="ctrlR" data-i18n="ctrlR">室溫 R (°C)</label>
+					<input type="range" id="ctrlR" min="10" max="30" value="22" step="1" />
+					<output id="outR">22</output>
+				</div>
+				<div class="control-row">
+					<label for="ctrlK" data-i18n="ctrlK">冷卻係數 k</label>
+					<input type="range" id="ctrlK" min="0.02" max="0.30" value="0.08" step="0.01" />
+					<output id="outK">0.08</output>
+				</div>
+			</div>
+			<svg id="coolingChart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet"></svg>
+		</div>
+	</section>
+
+	<section>
+		<h2 data-i18n="s3Title">3. 動手解：逐步驗證</h2>
+		<p data-i18n="s3p1">求解下列方程式：</p>
+		<div class="formula-block" set:html={ex1Problem} />
+		<p class="note" data-i18n="s3note">不是看解答，是自己解——每一步系統會用數值代入檢查，不對可以再試一次。</p>
+
+		<div class="workbench-shell">
+			<aside class="workbench-state" id="workbenchState">
+				<div class="state-title" data-i18n="stateTitle">目前進度</div>
+				<div class="state-box done" data-state="original">
+					<div class="state-box-label"><span data-i18n="stateOriginal">原方程式</span></div>
+					<div class="state-box-content" set:html={ex1Problem} />
+				</div>
+				<div class="state-box active" data-state="step1">
+					<div class="state-box-label"><span data-i18n="stateStep1">分離變數</span><span class="check-mark">✓</span></div>
+					<div class="state-box-content" data-role="content" data-i18n="statePending">尚未完成</div>
+				</div>
+				<div class="state-box" data-state="step2">
+					<div class="state-box-label"><span data-i18n="stateStep2">積分</span><span class="check-mark">✓</span></div>
+					<div class="state-box-content" data-role="content" data-i18n="statePending">尚未完成</div>
+				</div>
+				<div class="state-box" data-state="step3">
+					<div class="state-box-label"><span data-i18n="stateStep3">通解</span><span class="check-mark">✓</span></div>
+					<div class="state-box-content" data-role="content" data-i18n="statePending">尚未完成</div>
+				</div>
+			</aside>
+
+			<div class="card solver-card">
+				<p class="solver-prompt" id="solverPrompt"></p>
+				<div class="numeric-row">
+					<input type="text" id="consoleInput" autocomplete="off" spellcheck="false" />
+					<button class="action" id="consoleSubmitBtn" data-i18n="btnRun">送出</button>
+					<button class="choice" id="consoleHintBtn" data-i18n="btnHint">提示</button>
+				</div>
+				<div class="feedback" id="solverFeedback"></div>
+			</div>
+		</div>
+	</section>
+
+	<section>
+		<h2 data-i18n="s4Title">4. 練習一：這是可分離變數方程式嗎？</h2>
+		<div class="card">
+			<div class="quiz-eq" id="quizEq"></div>
+			<div class="btn-row">
+				<button class="choice" id="btnYes" data-i18n="btnYes">是，可分離</button>
+				<button class="choice" id="btnNo" data-i18n="btnNo">不是</button>
+			</div>
+			<div class="feedback" id="quizFeedback"></div>
+			<div class="btn-row" style="margin-top:0.8rem">
+				<button class="action" id="btnNextQuiz" data-i18n="btnNext">下一題</button>
+			</div>
+			<div class="score" id="quizScore"></div>
+		</div>
+	</section>
+
+	<section>
+		<h2 data-i18n="s5Title">5. 練習二：計算冷卻溫度</h2>
+		<div class="card">
+			<p id="coolProblemText"></p>
+			<div class="numeric-row">
+				<input type="number" id="numAnswer" step="0.1" placeholder="°C" />
+				<button class="action" id="btnCheckNum" data-i18n="btnCheck">檢查答案</button>
+				<button class="choice" id="btnNextNum" data-i18n="btnNext">下一題</button>
+			</div>
+			<div class="feedback" id="numFeedback"></div>
+			<div class="explain" id="numExplain"></div>
+		</div>
+	</section>
+
+	<script>
+		import { getStoredLang, type Lang } from '../../lib/i18n';
+
+		const dict: Record<Lang, Record<string, string>> = {
+			zh: {
+				unitBreadcrumb: '可分離變數方程式',
+				s1Title: '1. 什麼是可分離變數方程式',
+				s1p1: '一階微分方程式的一般形式是',
+				s1p2: '如果右邊 f(x, y) 可以拆成一個只跟 x 有關的函數,乘上一個只跟 y 有關的函數,這個方程式就稱為「可分離變數」。',
+				s1procTitle: '解題步驟',
+				s1proc1: '步驟一：把 x、y 各自的項分離到等號兩側',
+				s1proc2: '步驟二：兩邊各自積分',
+				s2Title: '2. 範例：牛頓冷卻定律',
+				s2p1: '咖啡的溫度變化速率,正比於「目前溫度」與「室溫」之間的差距,這就是一個典型的可分離變數方程式：',
+				s2p2: '解開之後可以得到溫度隨時間變化的公式：',
+				s2note: '拖動下方滑桿,觀察初始溫度、室溫、冷卻係數 k 如何影響冷卻曲線。',
+				ctrlT0: '初始溫度 T₀ (°C)',
+				ctrlR: '室溫 R (°C)',
+				ctrlK: '冷卻係數 k',
+				s3Title: '3. 動手解：逐步驗證',
+				s3p1: '求解下列方程式：',
+				s3note: '不是看解答，是自己解——每一步系統會用數值代入檢查，不對可以再試一次。',
+				btnHint: '提示',
+				btnRun: '送出',
+				stateTitle: '目前進度',
+				stateOriginal: '原方程式',
+				stateStep1: '分離變數',
+				stateStep2: '積分',
+				stateStep3: '通解',
+				statePending: '尚未完成',
+				consolePromptStep1: '第一步：把方程式分離成「P(y) ; Q(x)」的格式，例如 1/y ; 1/(1+x)',
+				consolePromptStep2: '第二步：輸入積分後的完整方程式，格式為「左邊 = 右邊」，用 C 代表常數，例如 ln(y) = ln(1+x) + C',
+				consolePromptStep3: '第三步：把 y 解出來，格式為「y = ...」，答案要包含常數 C，例如 y = C*(1+x)',
+				consoleAlreadyDone: '三步驟都已完成，可以往下看練習題。',
+				solverDoneMsg: '三步驟都正確。這就是這題的通解。',
+				errEmpty: '請把兩邊都輸入完整。',
+				errParse: '這個算式無法解析，檢查一下語法（乘法要用 *，例如 1/(1+x)）。',
+				errNeedSemicolon: '請用分號分隔兩邊，格式是「P(y) ; Q(x)」。',
+				errStep1Mismatch: '這樣分離後跟原方程式不一致，再檢查一次。',
+				errStep1LeftHasX: '左邊應該只能有 y，不能出現 x。',
+				errStep1RightHasY: '右邊應該只能有 x，不能出現 y。',
+				okStep1: '正確，這是分離變數後的形式。',
+				errNeedEquals: '請用一個等號分隔左右兩邊，例如 ln(y) = ln(1+x) + C。',
+				errStep2Left: '左邊對 y 微分後應該要等於第一步的左式，再檢查一次。',
+				errStep2Right: '右邊對 x 微分後應該要等於第一步的右式，再檢查一次。',
+				okStep2: '正確，積分結果沒問題。',
+				errNeedYEquals: '請用「y = ...」的形式作答。',
+				errStep3NoC: '答案裡要包含常數 C（這是通解，不是特解）。',
+				errStep3Mismatch: '代回原方程式對不起來，再檢查一次。',
+				okStep3: '正確，這就是通解。',
+				hintStep1: '格式是 P(y) ; Q(x)。左邊（只含 y）可以填 1/y，右邊（只含 x）可以填 1/(1+x)。',
+				hintStep2: '兩邊分別對 y、x 積分 1/y 和 1/(1+x)，記得加上常數 C。',
+				hintStep3: '先兩邊取 exp，再把絕對值符號處理掉，合併成一個常數 C。',
+				s4Title: '4. 練習一：這是可分離變數方程式嗎？',
+				btnYes: '是，可分離',
+				btnNo: '不是',
+				btnNext: '下一題',
+				s5Title: '5. 練習二：計算冷卻溫度',
+				btnCheck: '檢查答案',
+			},
+			en: {
+				unitBreadcrumb: 'Separable Equations',
+				s1Title: '1. What Is a Separable Equation',
+				s1p1: 'A first-order ODE has the general form',
+				s1p2: 'If the right-hand side f(x, y) can be split into a function of x only times a function of y only, the equation is called "separable".',
+				s1procTitle: 'Solving Procedure',
+				s1proc1: 'Step 1: Separate the x-terms and y-terms to opposite sides',
+				s1proc2: 'Step 2: Integrate both sides',
+				s2Title: "2. Example: Newton's Law of Cooling",
+				s2p1: "The rate at which a cup of coffee cools is proportional to the difference between its current temperature and room temperature — a classic separable equation:",
+				s2p2: 'Solving it gives the temperature as a function of time:',
+				s2note: 'Drag the sliders below to see how initial temperature, room temperature, and cooling rate k affect the curve.',
+				ctrlT0: 'Initial Temp T₀ (°C)',
+				ctrlR: 'Room Temp R (°C)',
+				ctrlK: 'Cooling Rate k',
+				s3Title: '3. Solve It: Checked Step by Step',
+				s3p1: 'Solve the following equation:',
+				s3note: "This isn't a worked answer to read — you solve it yourself. Each step is checked by numeric substitution; if it's wrong, try again.",
+				btnHint: 'Hint',
+				btnRun: 'Submit',
+				stateTitle: 'Progress',
+				stateOriginal: 'Original equation',
+				stateStep1: 'Separated',
+				stateStep2: 'Integrated',
+				stateStep3: 'General solution',
+				statePending: 'Not done yet',
+				consolePromptStep1: 'Step 1: separate the equation as "P(y) ; Q(x)", e.g. 1/y ; 1/(1+x)',
+				consolePromptStep2: 'Step 2: enter the full integrated equation as "left = right", using C for the constant, e.g. ln(y) = ln(1+x) + C',
+				consolePromptStep3: 'Step 3: solve for y, as "y = ...", including the constant C, e.g. y = C*(1+x)',
+				consoleAlreadyDone: 'All three steps are done — the practice exercises are below.',
+				solverDoneMsg: "All three steps check out. That's the general solution.",
+				errEmpty: 'Please fill in both sides first.',
+				errParse: "Couldn't parse that — check your syntax (use * for multiplication, e.g. 1/(1+x)).",
+				errNeedSemicolon: 'Separate the two sides with a semicolon, as "P(y) ; Q(x)".',
+				errStep1Mismatch: "That separation doesn't match the original equation — check again.",
+				errStep1LeftHasX: 'The left side should only contain y, not x.',
+				errStep1RightHasY: 'The right side should only contain x, not y.',
+				okStep1: "Correct — that's the separated form.",
+				errNeedEquals: 'Separate the two sides with a single "=", e.g. ln(y) = ln(1+x) + C.',
+				errStep2Left: "The derivative of the left side w.r.t. y should match step 1's left side — check again.",
+				errStep2Right: "The derivative of the right side w.r.t. x should match step 1's right side — check again.",
+				okStep2: 'Correct, the integration checks out.',
+				errNeedYEquals: 'Answer in the form "y = ...".',
+				errStep3NoC: 'Your answer should include the constant C (this is the general solution, not a particular one).',
+				errStep3Mismatch: "Substituting back into the original equation doesn't check out — try again.",
+				okStep3: "Correct — that's the general solution.",
+				hintStep1: 'Format is P(y) ; Q(x). Left side (y only) can be 1/y, right side (x only) can be 1/(1+x).',
+				hintStep2: 'Integrate 1/y w.r.t. y and 1/(1+x) w.r.t. x on each side, and add a constant C.',
+				hintStep3: 'Hint: exponentiate both sides, then absorb the absolute-value signs into one constant C.',
+				s4Title: '4. Practice 1: Is This Equation Separable?',
+				btnYes: 'Yes, separable',
+				btnNo: 'No',
+				btnNext: 'Next',
+				s5Title: '5. Practice 2: Compute the Cooling Temperature',
+				btnCheck: 'Check Answer',
+			},
+		};
+
+		let lang: Lang = getStoredLang();
+
+		function applyLang() {
+			document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+				const key = el.dataset.i18n!;
+				if (dict[lang][key] !== undefined) el.textContent = dict[lang][key];
+			});
+			renderQuiz();
+			renderNumeric(false);
+		}
+		window.addEventListener('langchange', (e: Event) => {
+			lang = (e as CustomEvent).detail.lang;
+			applyLang();
+		});
+
+		// ---------- Newton's cooling chart ----------
+		const svg = document.getElementById('coolingChart') as unknown as SVGSVGElement;
+		const ctrlT0 = document.getElementById('ctrlT0') as HTMLInputElement;
+		const ctrlR = document.getElementById('ctrlR') as HTMLInputElement;
+		const ctrlK = document.getElementById('ctrlK') as HTMLInputElement;
+		const outT0 = document.getElementById('outT0')!;
+		const outR = document.getElementById('outR')!;
+		const outK = document.getElementById('outK')!;
+
+		const W = 640, H = 320, PAD = 40;
+		const TMAX = 60;
+
+		function drawChart() {
+			const T0 = parseFloat(ctrlT0.value);
+			const R = parseFloat(ctrlR.value);
+			const k = parseFloat(ctrlK.value);
+			outT0.textContent = T0.toFixed(0);
+			outR.textContent = R.toFixed(0);
+			outK.textContent = k.toFixed(2);
+
+			const yMax = Math.max(T0, 100);
+			const yMin = Math.min(R, 10);
+			const xScale = (t: number) => PAD + (t / TMAX) * (W - 2 * PAD);
+			const yScale = (temp: number) => H - PAD - ((temp - yMin) / (yMax - yMin)) * (H - 2 * PAD);
+
+			let d = '';
+			const steps = 120;
+			for (let i = 0; i <= steps; i++) {
+				const t = (i / steps) * TMAX;
+				const temp = R + (T0 - R) * Math.exp(-k * t);
+				const x = xScale(t);
+				const y = yScale(temp);
+				d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+			}
+
+			const roomY = yScale(R).toFixed(1);
+			let gridLines = '';
+			for (let gt = 0; gt <= TMAX; gt += 10) {
+				const gx = xScale(gt).toFixed(1);
+				gridLines += `<line class="grid-line" x1="${gx}" y1="${PAD}" x2="${gx}" y2="${H - PAD}" />`;
+				gridLines += `<text class="axis-label" x="${gx}" y="${H - PAD + 16}" text-anchor="middle">${gt}</text>`;
+			}
+
+			svg.innerHTML = `
+				${gridLines}
+				<line class="room-line" x1="${PAD}" y1="${roomY}" x2="${W - PAD}" y2="${roomY}" />
+				<text class="axis-label" x="${W - PAD}" y="${Number(roomY) - 6}" text-anchor="end">R = ${R.toFixed(0)}°C</text>
+				<path class="curve" d="${d}" />
+				<text class="axis-label" x="${W / 2}" y="${H - 6}" text-anchor="middle">t (min)</text>
+				<text class="axis-label" x="12" y="${PAD}" text-anchor="start">°C</text>
+			`;
+		}
+		[ctrlT0, ctrlR, ctrlK].forEach((el) => el.addEventListener('input', drawChart));
+		drawChart();
+
+		// ---------- Solving helper: (1+x)dy - y dx = 0 ----------
+		// Verification is numeric, not string matching: we plug random sample
+		// points into what the student typed and check the math actually holds,
+		// so any algebraically equivalent answer is accepted. No LLM involved.
+		let mathjs: any = null;
+		const solverCanonical = {
+			step1: '\\dfrac{dy}{y} = \\dfrac{dx}{1+x}',
+			step2: '\\ln|y| = \\ln|1+x| + C',
+			step3: 'y = C(1+x)',
+		};
+
+		function randDomainPoint() {
+			let x: number, y: number;
+			do { x = Math.random() * 4 - 1.5; } while (Math.abs(x + 1) < 0.3);
+			do { y = Math.random() * 3 + 0.5; } while (Math.abs(y) < 0.3);
+			return { x, y };
+		}
+		function normalizeExpr(s: string): string {
+			return s.replace(/\bln\s*\(/g, 'log(');
+		}
+		function evalSafe(exprStr: string, scope: Record<string, number>): number | null {
+			try {
+				const v = mathjs.evaluate(normalizeExpr(exprStr), scope);
+				if (typeof v !== 'number' || !isFinite(v)) return null;
+				return v;
+			} catch {
+				return null;
+			}
+		}
+		function checkStep1(pStr: string, qStr: string) {
+			if (!pStr.trim() || !qStr.trim()) return { ok: false, msgKey: 'errEmpty' };
+			for (let i = 0; i < 5; i++) {
+				const { x, y } = randDomainPoint();
+				const pVal = evalSafe(pStr, { y, x });
+				const qVal = evalSafe(qStr, { x, y });
+				if (pVal === null || qVal === null || pVal === 0) return { ok: false, msgKey: 'errParse' };
+				const expected = y / (1 + x);
+				const ratio = qVal / pVal;
+				if (Math.abs(ratio - expected) > 1e-4 * Math.max(1, Math.abs(expected))) {
+					return { ok: false, msgKey: 'errStep1Mismatch' };
+				}
+			}
+			const { x, y } = randDomainPoint();
+			const p1 = evalSafe(pStr, { y, x });
+			const p2 = evalSafe(pStr, { y, x: x + 1.7 });
+			if (p1 !== null && p2 !== null && Math.abs(p1 - p2) > 1e-6 * Math.max(1, Math.abs(p1))) {
+				return { ok: false, msgKey: 'errStep1LeftHasX' };
+			}
+			const q1 = evalSafe(qStr, { x, y });
+			const q2 = evalSafe(qStr, { x, y: y + 1.7 });
+			if (q1 !== null && q2 !== null && Math.abs(q1 - q2) > 1e-6 * Math.max(1, Math.abs(q1))) {
+				return { ok: false, msgKey: 'errStep1RightHasY' };
+			}
+			return { ok: true, msgKey: 'okStep1' };
+		}
+		function checkStep2(fullStr: string) {
+			const parts = fullStr.split('=');
+			if (parts.length !== 2) return { ok: false, msgKey: 'errNeedEquals' };
+			const lhs = parts[0].trim();
+			const rhs = parts[1].trim();
+			if (!lhs || !rhs) return { ok: false, msgKey: 'errEmpty' };
+			let dLhsStr: string, dRhsStr: string;
+			try {
+				dLhsStr = mathjs.derivative(normalizeExpr(lhs), 'y').toString();
+				dRhsStr = mathjs.derivative(normalizeExpr(rhs), 'x').toString();
+			} catch {
+				return { ok: false, msgKey: 'errParse' };
+			}
+			for (let i = 0; i < 4; i++) {
+				const { y } = randDomainPoint();
+				const dv = evalSafe(dLhsStr, { y });
+				const expected = 1 / y;
+				if (dv === null || Math.abs(dv - expected) > 1e-4 * Math.max(1, Math.abs(expected))) {
+					return { ok: false, msgKey: 'errStep2Left' };
+				}
+			}
+			for (let i = 0; i < 4; i++) {
+				const { x } = randDomainPoint();
+				const dv = evalSafe(dRhsStr, { x });
+				const expected = 1 / (1 + x);
+				if (dv === null || Math.abs(dv - expected) > 1e-4 * Math.max(1, Math.abs(expected))) {
+					return { ok: false, msgKey: 'errStep2Right' };
+				}
+			}
+			return { ok: true, msgKey: 'okStep2' };
+		}
+		function checkStep3(fullStr: string) {
+			const parts = fullStr.split('=');
+			if (parts.length !== 2 || parts[0].trim() !== 'y') return { ok: false, msgKey: 'errNeedYEquals' };
+			const rhs = parts[1].trim();
+			if (!rhs) return { ok: false, msgKey: 'errEmpty' };
+			let dRhsStr: string;
+			try {
+				dRhsStr = mathjs.derivative(normalizeExpr(rhs), 'x').toString();
+			} catch {
+				return { ok: false, msgKey: 'errParse' };
+			}
+			const v1 = evalSafe(rhs, { x: 0.5, C: 1 });
+			const v2 = evalSafe(rhs, { x: 0.5, C: 2 });
+			if (v1 === null || v2 === null) return { ok: false, msgKey: 'errParse' };
+			if (Math.abs(v1 - v2) < 1e-6) return { ok: false, msgKey: 'errStep3NoC' };
+			for (let i = 0; i < 5; i++) {
+				let x: number;
+				do { x = Math.random() * 4 - 1.5; } while (Math.abs(x + 1) < 0.3);
+				const C = Math.random() * 3 + 0.5;
+				const yVal = evalSafe(rhs, { x, C });
+				const dyVal = evalSafe(dRhsStr, { x, C });
+				if (yVal === null || dyVal === null) return { ok: false, msgKey: 'errParse' };
+				const residual = (1 + x) * dyVal - yVal;
+				if (Math.abs(residual) > 1e-3 * Math.max(1, Math.abs(yVal))) {
+					return { ok: false, msgKey: 'errStep3Mismatch' };
+				}
+			}
+			return { ok: true, msgKey: 'okStep3' };
+		}
+		function checkStep1FromInput(raw: string) {
+			const parts = raw.split(';');
+			if (parts.length !== 2) return { ok: false, msgKey: 'errNeedSemicolon' };
+			return checkStep1(parts[0].trim(), parts[1].trim());
+		}
+
+		let solverStepsCompleted = 0;
+		type SolverStepId = 1 | 2 | 3 | 4;
+		let currentSolverStep: SolverStepId = 1;
+
+		const stepPromptKeys: Record<1 | 2 | 3, string> = {
+			1: 'consolePromptStep1',
+			2: 'consolePromptStep2',
+			3: 'consolePromptStep3',
+		};
+		const stepHintKeys: Record<1 | 2 | 3, string> = { 1: 'hintStep1', 2: 'hintStep2', 3: 'hintStep3' };
+		const stepCheckers: Record<1 | 2 | 3, (raw: string) => { ok: boolean; msgKey: string }> = {
+			1: checkStep1FromInput,
+			2: checkStep2,
+			3: checkStep3,
+		};
+		const stepItemIds: Record<1 | 2 | 3, string> = { 1: 'step1', 2: 'step2', 3: 'step3' };
+
+		function setFeedback(text: string, cls: 'correct' | 'incorrect' | 'hint' | '') {
+			const el = document.getElementById('solverFeedback')!;
+			el.textContent = text;
+			el.className = 'feedback' + (cls ? ' ' + cls : '');
+		}
+		function renderTexToHtml(texSrc: string): string {
+			// @ts-ignore katex attached to window by the dynamic import below
+			return window.katex ? window.katex.renderToString(texSrc, { throwOnError: false }) : texSrc;
+		}
+		function setStateBox(stepId: 1 | 2 | 3, status: 'active' | 'done', canonicalTex?: string) {
+			const box = document.querySelector(`.state-box[data-state="step${stepId}"]`) as HTMLElement;
+			box.classList.remove('active', 'done');
+			box.classList.add(status);
+			if (status === 'done' && canonicalTex) {
+				const content = box.querySelector('[data-role="content"]') as HTMLElement;
+				content.removeAttribute('data-i18n');
+				content.innerHTML = renderTexToHtml(canonicalTex);
+			}
+		}
+		function printStepPrompt(stepId: 1 | 2 | 3) {
+			document.getElementById('solverPrompt')!.textContent = dict[lang][stepPromptKeys[stepId]] ?? '';
+		}
+		async function logAttempt(itemId: string, isCorrect: boolean, submittedValue: string) {
+			try {
+				await fetch('/api/attempts', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ unitId: 'separable-equation', itemId, isCorrect, submittedValue }),
+				});
+			} catch {
+				// Not logged in, or Functions/D1 not available in this environment — the
+				// solver still works standalone without persistence.
+			}
+		}
+		function saveSolverProgress(finished: boolean) {
+			fetch('/api/progress', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					unitId: 'separable-equation',
+					stepsCompleted: solverStepsCompleted,
+					stepsTotal: 3,
+					status: finished ? 'completed' : 'in_progress',
+				}),
+			}).catch(() => {});
+		}
+
+		function submitConsoleLine() {
+			if (!mathjs) return;
+			const input = document.getElementById('consoleInput') as HTMLInputElement;
+			const raw = input.value.trim();
+			if (!raw) return;
+
+			if (currentSolverStep === 4) {
+				setFeedback(dict[lang]['consoleAlreadyDone'] ?? '', '');
+				return;
+			}
+
+			const step = currentSolverStep;
+			const result = stepCheckers[step](raw);
+			logAttempt(stepItemIds[step], result.ok, raw);
+			setFeedback(dict[lang][result.msgKey] ?? result.msgKey, result.ok ? 'correct' : 'incorrect');
+
+			if (result.ok) {
+				input.value = '';
+				setStateBox(step, 'done', solverCanonical[`step${step}` as 'step1' | 'step2' | 'step3']);
+				solverStepsCompleted = Math.max(solverStepsCompleted, step);
+				if (step < 3) {
+					const next = (step + 1) as 1 | 2 | 3;
+					currentSolverStep = next;
+					setStateBox(next, 'active');
+					printStepPrompt(next);
+					saveSolverProgress(false);
+				} else {
+					currentSolverStep = 4;
+					document.getElementById('solverPrompt')!.textContent = dict[lang]['solverDoneMsg'] ?? '';
+					saveSolverProgress(true);
+				}
+			}
+		}
+		document.getElementById('consoleSubmitBtn')!.addEventListener('click', submitConsoleLine);
+		document.getElementById('consoleInput')!.addEventListener('keydown', (e) => {
+			if ((e as KeyboardEvent).key === 'Enter') submitConsoleLine();
+		});
+		document.getElementById('consoleHintBtn')!.addEventListener('click', () => {
+			if (currentSolverStep === 4) return;
+			setFeedback(dict[lang][stepHintKeys[currentSolverStep]] ?? '', 'hint');
+		});
+
+		function initWorkbenchConsole() {
+			printStepPrompt(1);
+		}
+
+		// ---------- Practice 1: separable-or-not quiz ----------
+		interface QuizItem { tex: string; separable: boolean; }
+		const quizBank: QuizItem[] = [
+			{ tex: '\\frac{dy}{dx} = x^2 y', separable: true },
+			{ tex: '\\frac{dy}{dx} = x + y', separable: false },
+			{ tex: '\\frac{dy}{dx} = e^{x+y}', separable: true },
+			{ tex: '\\frac{dy}{dx} = xy + x', separable: true },
+			{ tex: '\\frac{dy}{dx} = x^2 + y^2', separable: false },
+			{ tex: '\\frac{dy}{dx} = \\sin(x)\\cos(y)', separable: true },
+			{ tex: '\\frac{dy}{dx} = \\frac{x}{y}', separable: true },
+			{ tex: '\\frac{dy}{dx} = x - y', separable: false },
+		];
+		let quizIdx = -1;
+		let quizScore = 0, quizTotal = 0;
+		let quizAnswered = false;
+
+		function pickQuiz() {
+			let next;
+			do { next = Math.floor(Math.random() * quizBank.length); } while (next === quizIdx && quizBank.length > 1);
+			quizIdx = next;
+			quizAnswered = false;
+			renderQuiz();
+		}
+		function renderQuiz() {
+			if (quizIdx === -1) quizIdx = Math.floor(Math.random() * quizBank.length);
+			const item = quizBank[quizIdx];
+			// @ts-ignore katex is loaded globally via bundled css/import in another module context
+			document.getElementById('quizEq')!.innerHTML = window.katex
+				? window.katex.renderToString(item.tex, { throwOnError: false })
+				: item.tex;
+			document.getElementById('quizFeedback')!.textContent = '';
+			document.getElementById('quizFeedback')!.className = 'feedback';
+			const scoreLabel = lang === 'zh' ? `得分：${quizScore} / ${quizTotal}` : `Score: ${quizScore} / ${quizTotal}`;
+			document.getElementById('quizScore')!.textContent = quizTotal > 0 ? scoreLabel : '';
+		}
+		function answerQuiz(userSaysYes: boolean) {
+			if (quizAnswered) return;
+			quizAnswered = true;
+			const item = quizBank[quizIdx];
+			const correct = userSaysYes === item.separable;
+			quizTotal++;
+			if (correct) quizScore++;
+			const fb = document.getElementById('quizFeedback')!;
+			const correctText = lang === 'zh'
+				? (item.separable ? '正確，這題可以分離變數。' : '正確，這題無法分離變數。')
+				: (item.separable ? 'Correct — this equation is separable.' : 'Correct — this equation is not separable.');
+			const wrongText = lang === 'zh'
+				? (item.separable ? '不對，這題其實可以分離變數。' : '不對，這題其實不能分離變數。')
+				: (item.separable ? 'Not quite — this one is separable.' : 'Not quite — this one is not separable.');
+			fb.textContent = correct ? correctText : wrongText;
+			fb.className = 'feedback ' + (correct ? 'correct' : 'incorrect');
+			const scoreLabel = lang === 'zh' ? `得分：${quizScore} / ${quizTotal}` : `Score: ${quizScore} / ${quizTotal}`;
+			document.getElementById('quizScore')!.textContent = scoreLabel;
+		}
+		document.getElementById('btnYes')!.addEventListener('click', () => answerQuiz(true));
+		document.getElementById('btnNo')!.addEventListener('click', () => answerQuiz(false));
+		document.getElementById('btnNextQuiz')!.addEventListener('click', pickQuiz);
+
+		// ---------- Practice 2: numeric cooling problem ----------
+		let numR = 0, numT0 = 0, numK = 0, numT = 0, numAnswerVal = 0;
+		function newNumericProblem() {
+			numR = Math.round(18 + Math.random() * 10);
+			numT0 = Math.round(75 + Math.random() * 20);
+			numK = Math.round((0.04 + Math.random() * 0.12) * 100) / 100;
+			numT = Math.round(5 + Math.random() * 25);
+			numAnswerVal = numR + (numT0 - numR) * Math.exp(-numK * numT);
+			renderNumeric(true);
+		}
+		function renderNumeric(reset: boolean) {
+			const text = lang === 'zh'
+				? `一杯咖啡的初始溫度為 ${numT0}°C，室溫為 ${numR}°C，冷卻係數 k = ${numK}。請問經過 ${numT} 分鐘後，咖啡溫度約為幾度？（取到小數點後一位）`
+				: `A cup of coffee starts at ${numT0}°C in a ${numR}°C room, with cooling constant k = ${numK}. What is its temperature after ${numT} minutes? (round to 1 decimal)`;
+			document.getElementById('coolProblemText')!.textContent = text;
+			if (reset) {
+				(document.getElementById('numAnswer') as HTMLInputElement).value = '';
+				document.getElementById('numFeedback')!.textContent = '';
+				document.getElementById('numFeedback')!.className = 'feedback';
+				document.getElementById('numExplain')!.className = 'explain';
+			}
+		}
+		function checkNumeric() {
+			const input = document.getElementById('numAnswer') as HTMLInputElement;
+			const userVal = parseFloat(input.value);
+			const fb = document.getElementById('numFeedback')!;
+			const explain = document.getElementById('numExplain')!;
+			if (isNaN(userVal)) {
+				fb.textContent = lang === 'zh' ? '請先輸入答案。' : 'Please enter an answer first.';
+				fb.className = 'feedback incorrect';
+				return;
+			}
+			const correct = Math.abs(userVal - numAnswerVal) <= 0.5;
+			fb.textContent = correct
+				? (lang === 'zh' ? `正確，答案約為 ${numAnswerVal.toFixed(1)}°C。` : `Correct — the answer is about ${numAnswerVal.toFixed(1)}°C.`)
+				: (lang === 'zh' ? `不對，正確答案約為 ${numAnswerVal.toFixed(1)}°C。` : `Not quite — the correct answer is about ${numAnswerVal.toFixed(1)}°C.`);
+			fb.className = 'feedback ' + (correct ? 'correct' : 'incorrect');
+			explain.textContent = lang === 'zh'
+				? `T(t) = R + (T₀ − R)e^(−kt) = ${numR} + (${numT0} − ${numR})·e^(−${numK}×${numT}) ≈ ${numAnswerVal.toFixed(2)}`
+				: `T(t) = R + (T₀ − R)e^(−kt) = ${numR} + (${numT0} − ${numR})·e^(−${numK}×${numT}) ≈ ${numAnswerVal.toFixed(2)}`;
+			explain.className = 'explain show';
+		}
+		document.getElementById('btnCheckNum')!.addEventListener('click', checkNumeric);
+		document.getElementById('btnNextNum')!.addEventListener('click', newNumericProblem);
+
+		// ---------- init ----------
+		import('katex').then((mod) => {
+			// @ts-ignore expose for quiz/state rendering
+			window.katex = mod.default ?? mod;
+			pickQuiz();
+		});
+		import('mathjs').then((mod) => {
+			mathjs = mod;
+		});
+		newNumericProblem();
+		applyLang();
+		initWorkbenchConsole();
+	</script>
+</BaseLayout>

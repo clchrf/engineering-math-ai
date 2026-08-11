@@ -1,0 +1,16 @@
+name = "engineering-math-ai"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+# Create the D1 database once with:
+#   npx wrangler d1 create engineering-math-db
+# then paste the returned database_id below, and apply db/schema.sql to it.
+[[d1_databases]]
+binding = "DB"
+database_name = "engineering-math-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Google OAuth credentials — set as secrets, never commit real values:
+#   npx wrangler pages secret put GOOGLE_CLIENT_ID
+#   npx wrangler pages secret put GOOGLE_CLIENT_SECRET
+#   npx wrangler pages secret put SESSION_SECRET

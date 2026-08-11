@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { units, categories } from '../data/units';
+
+const totalUnits = units.length;
+const liveUnits = units.filter((u) => u.href).length;
+---
+
+<BaseLayout title="工程數學互動教材" description="用互動練習取代死背公式，一步步建立解題信心。">
+	<style>
+		.hero { padding: 1.5rem 0 2rem; border-bottom: 1px solid var(--border-soft); }
+		h1.hero-title { font-size: 1.6rem; margin: 0 0 0.5rem; letter-spacing: -0.01em; line-height: 1.4; font-weight: 700; }
+		.hero-sub { color: var(--muted); font-size: 0.95rem; max-width: 38rem; margin: 0 0 1.1rem; }
+		.progress-line { display: flex; align-items: center; gap: 0.6rem; font-size: 0.83rem; color: var(--muted); }
+		.progress-track { width: 100px; height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+		.progress-fill { height: 100%; background: var(--accent); }
+		.progress-line strong { color: var(--fg); }
+
+		.cat-block { margin: 2.4rem 0; }
+		.cat-title {
+			font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+			color: var(--muted); margin-bottom: 0.9rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-soft);
+		}
+		.unit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+
+		.unit-card {
+			display: flex; flex-direction: column; gap: 0.55rem; padding: 1.1rem 1.25rem;
+			text-decoration: none; color: inherit; transition: border-color 0.15s ease;
+		}
+		a.unit-card:hover { border-color: var(--accent); }
+		.unit-card.locked { opacity: 0.55; }
+		.unit-num {
+			font-size: 0.72rem; color: var(--muted); font-weight: 700;
+			font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+		}
+		.unit-title { font-weight: 700; font-size: 0.98rem; line-height: 1.4; }
+		.unit-blurb { color: var(--muted); font-size: 0.85rem; line-height: 1.55; flex: 1; }
+		.unit-status { font-size: 0.78rem; font-weight: 600; }
+		.unit-status.ready { color: var(--accent); }
+		.unit-status.soon { color: var(--muted-soft); }
+
+		[data-lang] { display: none; }
+		[data-lang].lang-active { display: inline; }
+	</style>
+
+	<section class="hero">
+		<h1 class="hero-title" data-i18n="heroTitle">工程數學</h1>
+		<p class="hero-sub" data-i18n="heroSub">跟著單元練習可分離變數方程式、Laplace 轉換、傅立葉級數。每一步由系統代入數值檢查，不是對照解答，是真的解出來。</p>
+		<div class="progress-line">
+			<span data-i18n="progressLabel">課程進度</span>
+			<div class="progress-track"><div class="progress-fill" style={`width:${(liveUnits / totalUnits) * 100}%`}></div></div>
+			<strong>{liveUnits} / {totalUnits}</strong>
+		</div>
+	</section>
+
+	{categories.map((cat, catIdx) => (
+		<div class="cat-block">
+			<div class="cat-title">
+				<span data-lang="zh" class="lang-active">{cat.zh}</span>
+				<span data-lang="en">{cat.en}</span>
+			</div>
+			<div class="unit-grid">
+				{units.filter((u) => u.category === cat.id).map((unit, i) => {
+					const CardTag = unit.href ? 'a' : 'div';
+					return (
+						<CardTag class={`unit-card card ${unit.href ? '' : 'locked'}`} href={unit.href ?? undefined}>
+							<span class="unit-num">{String(catIdx + 1)}.{i + 1}</span>
+							<div class="unit-title">
+								<span data-lang="zh" class="lang-active">{unit.title}</span>
+								<span data-lang="en">{unit.titleEn}</span>
+							</div>
+							<div class="unit-blurb">
+								<span data-lang="zh" class="lang-active">{unit.blurb}</span>
+								<span data-lang="en">{unit.blurbEn}</span>
+							</div>
+							{unit.href ? (
+								<span class="unit-status ready">
+									<span data-lang="zh" class="lang-active">可以開始 →</span>
+									<span data-lang="en">Ready to start →</span>
+								</span>
+							) : (
+								<span class="unit-status soon">
+									<span data-lang="zh" class="lang-active">即將推出</span>
+									<span data-lang="en">Coming soon</span>
+								</span>
+							)}
+						</CardTag>
+					);
+				})}
+			</div>
+		</div>
+	))}
+
+	<script>
+		import { getStoredLang, type Lang } from '../lib/i18n';
+
+		const dict: Record<Lang, Record<string, string>> = {
+			zh: {
+				heroTitle: '工程數學',
+				heroSub: '跟著單元練習可分離變數方程式、Laplace 轉換、傅立葉級數。每一步由系統代入數值檢查，不是對照解答，是真的解出來。',
+				progressLabel: '課程進度',
+			},
+			en: {
+				heroTitle: 'Engineering Mathematics',
+				heroSub: 'Work through separable equations, Laplace transforms, and Fourier series. Every step is checked by numeric substitution — not matched against an answer key, actually solved.',
+				progressLabel: 'Course progress',
+			},
+		};
+
+		function applyLang(lang: Lang) {
+			document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+			document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+				const key = el.dataset.i18n!;
+				if (dict[lang][key] !== undefined) el.textContent = dict[lang][key];
+			});
+			document.querySelectorAll<HTMLElement>('[data-lang]').forEach((el) => {
+				el.classList.toggle('lang-active', el.dataset.lang === lang);
+			});
+		}
+
+		let lang: Lang = getStoredLang();
+		applyLang(lang);
+		window.addEventListener('langchange', (e: Event) => {
+			lang = (e as CustomEvent).detail.lang;
+			applyLang(lang);
+		});
+	</script>
+</BaseLayout>
