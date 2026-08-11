@@ -5,6 +5,7 @@ interface Props {
 	unitTitle?: string; // set on unit pages to show a breadcrumb
 }
 const { title, description = '工程數學互動教材', unitTitle } = Astro.props;
+const base = import.meta.env.BASE_URL;
 ---
 
 <html lang="zh-Hant">
@@ -13,7 +14,7 @@ const { title, description = '工程數學互動教材', unitTitle } = Astro.pro
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta name="description" content={description} />
 	<title>{title}</title>
-	<link rel="icon" href="/favicon.svg" />
+	<link rel="icon" href={`${base}favicon.svg`} />
 	<style is:global>
 		:root {
 			--bg: #ffffff;
@@ -91,7 +92,7 @@ const { title, description = '工程數學互動教材', unitTitle } = Astro.pro
 <body>
 	<div class="wrap">
 		<header class="site-header">
-			<a class="brand-row" href="/">
+			<a class="brand-row" href={base}>
 				<div class="brand-mark">∫</div>
 				<span class="brand-name" data-chrome-i18n="brandName">工程數學互動教材<span class="beta-badge">BETA</span></span>
 			</a>

@@ -4,6 +4,7 @@ import { units, categories } from '../data/units';
 
 const totalUnits = units.length;
 const liveUnits = units.filter((u) => u.href).length;
+const base = import.meta.env.BASE_URL;
 ---
 
 <BaseLayout title="工程數學互動教材" description="用互動練習取代死背公式，一步步建立解題信心。">
@@ -63,7 +64,7 @@ const liveUnits = units.filter((u) => u.href).length;
 				{units.filter((u) => u.category === cat.id).map((unit, i) => {
 					const CardTag = unit.href ? 'a' : 'div';
 					return (
-						<CardTag class={`unit-card card ${unit.href ? '' : 'locked'}`} href={unit.href ?? undefined}>
+						<CardTag class={`unit-card card ${unit.href ? '' : 'locked'}`} href={unit.href ? base + unit.href.replace(/^\//, '') : undefined}>
 							<span class="unit-num">{String(catIdx + 1)}.{i + 1}</span>
 							<div class="unit-title">
 								<span data-lang="zh" class="lang-active">{unit.title}</span>
