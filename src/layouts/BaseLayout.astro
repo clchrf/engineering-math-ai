@@ -70,6 +70,11 @@ const base = import.meta.env.BASE_URL;
 		}
 		.crumb-sep { color: var(--muted-soft); margin: 0 0.15rem; }
 		.crumb-unit { color: var(--muted); font-size: 0.92rem; font-weight: 600; }
+		.header-nav { display: flex; align-items: center; gap: 1rem; }
+		.header-nav a {
+			font-size: 0.85rem; color: var(--muted); text-decoration: none; font-weight: 600;
+		}
+		.header-nav a:hover { color: var(--accent); }
 		#langToggle {
 			border: 1px solid var(--border); background: var(--card); color: var(--fg);
 			padding: 0.5rem 1.1rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem;
@@ -99,7 +104,10 @@ const base = import.meta.env.BASE_URL;
 			{unitTitle && (
 				<span class="crumb-unit"><span class="crumb-sep">/</span> <span data-i18n="unitBreadcrumb">{unitTitle}</span></span>
 			)}
-			<button id="langToggle" type="button">EN</button>
+			<nav class="header-nav">
+				<a href={`${base}glossary`} data-chrome-i18n="navGlossary">名詞解釋</a>
+				<button id="langToggle" type="button">EN</button>
+			</nav>
 		</header>
 
 		<slot />
@@ -115,10 +123,12 @@ const base = import.meta.env.BASE_URL;
 		const chromeDict: Record<Lang, Record<string, string>> = {
 			zh: {
 				brandName: '工程數學互動教材',
+				navGlossary: '名詞解釋',
 				footerNote: '內容改寫自課堂講義（賴以威，工程數學）。此網站為互動教材原型，持續擴充中。',
 			},
 			en: {
 				brandName: 'Engineering Math — Interactive Courseware',
+				navGlossary: 'Glossary',
 				footerNote: 'Content adapted from course slides (I-Wei Lai, Engineering Mathematics). This is an evolving courseware prototype.',
 			},
 		};

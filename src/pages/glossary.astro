@@ -1,0 +1,105 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { glossary } from '../data/glossary';
+import { units } from '../data/units';
+
+const base = import.meta.env.BASE_URL;
+const unitTitleById = new Map(units.map((u) => [u.id, u]));
+---
+
+<BaseLayout title="名詞解釋 — 工程數學互動教材" description="工程數學課程裡容易搞混的名詞，集中在這裡查。">
+	<style>
+		.glossary-hero {
+			background: var(--accent-soft); border-radius: var(--radius);
+			padding: 2.4rem 2rem 3rem; position: relative; overflow: hidden; margin-bottom: 1.75rem;
+		}
+		.glossary-hero-title { font-size: 1.9rem; font-weight: 800; color: var(--accent-strong); margin: 0 0 0.3rem; letter-spacing: -0.01em; }
+		.glossary-hero-subtitle {
+			font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; color: var(--accent);
+			text-transform: uppercase; margin: 0 0 1.1rem;
+		}
+		.glossary-breadcrumb { font-size: 0.85rem; color: var(--muted); position: relative; z-index: 1; }
+		.glossary-breadcrumb a { color: var(--accent-strong); text-decoration: none; }
+		.glossary-breadcrumb a:hover { text-decoration: underline; }
+		.glossary-wave { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 34px; display: block; }
+
+		.glossary-list { display: flex; flex-direction: column; gap: 0.75rem; }
+		.glossary-entry { padding: 1.1rem 1.4rem; }
+		.glossary-entry summary {
+			cursor: pointer; font-weight: 700; font-size: 1rem; list-style: none;
+			display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+		}
+		.glossary-entry summary::-webkit-details-marker { display: none; }
+		.glossary-entry summary .arrow { font-size: 0.75rem; color: var(--muted); transition: transform 0.15s ease; flex-shrink: 0; }
+		.glossary-entry[open] summary .arrow { transform: rotate(90deg); }
+		.glossary-entry-unit { font-size: 0.72rem; color: var(--muted-soft); font-weight: 600; margin-top: 0.15rem; }
+		.glossary-entry-body { margin-top: 0.8rem; font-size: 0.92rem; line-height: 1.75; color: var(--fg); }
+
+		[data-lang] { display: none; }
+		[data-lang].lang-active { display: inline; }
+	</style>
+
+	<div class="glossary-hero">
+		<p class="glossary-breadcrumb">
+			<a href={base}><span data-lang="zh" class="lang-active">首頁</span><span data-lang="en">Home</span></a>
+			<span> / </span>
+			<span data-lang="zh" class="lang-active">名詞解釋</span><span data-lang="en">Glossary</span>
+		</p>
+		<h1 class="glossary-hero-title"><span data-lang="zh" class="lang-active">名詞解釋</span><span data-lang="en">Glossary</span></h1>
+		<p class="glossary-hero-subtitle">GLOSSARY</p>
+		<svg class="glossary-wave" viewBox="0 0 600 24" preserveAspectRatio="none">
+			<path d="M0,16 C100,26 200,6 300,16 C400,26 500,6 600,16 L600,24 L0,24 Z" fill="var(--bg)"></path>
+		</svg>
+	</div>
+
+	<div class="glossary-list">
+		{glossary.map((entry) => {
+			const unit = unitTitleById.get(entry.unit);
+			return (
+				<details class="glossary-entry card" id={entry.id}>
+					<summary>
+						<span>
+							<span data-lang="zh" class="lang-active">{entry.title.zh}</span>
+							<span data-lang="en">{entry.title.en}</span>
+							{unit && (
+								<span class="glossary-entry-unit">
+									<span data-lang="zh" class="lang-active">出自：{unit.title}</span>
+									<span data-lang="en">From: {unit.titleEn}</span>
+								</span>
+							)}
+						</span>
+						<span class="arrow">▸</span>
+					</summary>
+					<div class="glossary-entry-body">
+						<span data-lang="zh" class="lang-active">{entry.body.zh}</span>
+						<span data-lang="en">{entry.body.en}</span>
+					</div>
+				</details>
+			);
+		})}
+	</div>
+
+	<script>
+		import { getStoredLang, type Lang } from '../lib/i18n';
+
+		function applyLang(lang: Lang) {
+			document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+			document.querySelectorAll<HTMLElement>('[data-lang]').forEach((el) => {
+				el.classList.toggle('lang-active', el.dataset.lang === lang);
+			});
+		}
+		applyLang(getStoredLang());
+		window.addEventListener('langchange', (e: Event) => {
+			applyLang((e as CustomEvent).detail.lang);
+		});
+
+		// Open + scroll to the entry named in the URL hash (e.g. from a unit page's "view full glossary" link).
+		if (location.hash) {
+			const target = document.querySelector<HTMLDetailsElement>(location.hash);
+			if (target) {
+				target.open = true;
+				target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		}
+	</script>
+</BaseLayout>
