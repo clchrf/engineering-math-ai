@@ -10,7 +10,7 @@ const base = import.meta.env.BASE_URL;
 <BaseLayout title="工程數學互動教材" description="用互動練習取代死背公式，一步步建立解題信心。">
 	<style>
 		.hero { padding: 1.5rem 0 2rem; border-bottom: 1px solid var(--border-soft); }
-		h1.hero-title { font-size: 1.6rem; margin: 0 0 0.5rem; letter-spacing: -0.01em; line-height: 1.4; font-weight: 700; }
+		h1.hero-title { font-size: 2.1rem; margin: 0 0 0.55rem; letter-spacing: -0.02em; line-height: 1.15; font-weight: 700; }
 		.hero-sub { color: var(--muted); font-size: 0.95rem; max-width: 38rem; margin: 0 0 1.1rem; }
 		.progress-line { display: flex; align-items: center; gap: 0.6rem; font-size: 0.83rem; color: var(--muted); }
 		.progress-track { width: 100px; height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
@@ -26,15 +26,19 @@ const base = import.meta.env.BASE_URL;
 
 		.unit-card {
 			display: flex; flex-direction: column; gap: 0.55rem; padding: 1.1rem 1.25rem;
-			text-decoration: none; color: inherit; transition: border-color 0.15s ease;
+			text-decoration: none; color: inherit;
+			transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 		}
-		a.unit-card:hover { border-color: var(--accent); }
+		a.unit-card:hover {
+			border-color: var(--accent); transform: translateY(-2px);
+			box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.18);
+		}
 		.unit-card.locked { opacity: 0.55; }
 		.unit-num {
 			font-size: 0.72rem; color: var(--muted); font-weight: 700;
 			font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 		}
-		.unit-title { font-weight: 700; font-size: 0.98rem; line-height: 1.4; }
+		.unit-title { font-weight: 700; font-size: 0.98rem; line-height: 1.35; letter-spacing: -0.005em; }
 		.unit-blurb { color: var(--muted); font-size: 0.85rem; line-height: 1.55; flex: 1; }
 		.unit-status { font-size: 0.78rem; font-weight: 600; }
 		.unit-status.ready { color: var(--accent); }
