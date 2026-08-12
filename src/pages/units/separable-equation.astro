@@ -40,12 +40,25 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			font-size: 0.85rem; font-variant-numeric: tabular-nums; text-align: right;
 			font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; color: var(--fg);
 		}
+		@media (max-width: 520px) {
+			.control-row { grid-template-columns: 1fr 48px; grid-template-areas: "label label" "slider out"; row-gap: 0.3rem; }
+			.control-row label { grid-area: label; }
+			.control-row input[type="range"] { grid-area: slider; }
+			.control-row output { grid-area: out; }
+		}
 		input[type="range"] { width: 100%; accent-color: var(--accent); height: 4px; border-radius: 999px; }
 		svg#coolingChart { width: 100%; height: auto; background: var(--bg-canvas); border-radius: var(--radius-sm); border: 1px solid var(--border); }
 		.axis-label { fill: var(--muted); font-size: 11px; }
 		.grid-line { stroke: var(--border); stroke-width: 1; }
 		.curve { fill: none; stroke: var(--accent); stroke-width: 2.5; }
 		.room-line { stroke: var(--muted-soft); stroke-width: 1; stroke-dasharray: 4 4; }
+
+		/* Slope field */
+		svg#slopeField { width: 100%; height: auto; background: var(--bg-canvas); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 0.2rem; }
+		.field-segment { stroke: var(--muted-soft); stroke-width: 1.3; stroke-linecap: round; }
+		.solution-line { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+		.start-dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+		#slopeSolutionText { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
 
 		/* Exercises */
 		.quiz-eq { font-size: 1.2rem; margin: 0.75rem 0 1.1rem; }
@@ -153,7 +166,31 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 	</section>
 
 	<section>
-		<h2 data-i18n="s3Title">3. 動手解：逐步驗證</h2>
+		<h2 data-i18n="sSlopeTitle">3. 方向場：解曲線長什麼樣</h2>
+		<p data-i18n="sSlopeP1">求解下列方程式：</p>
+		<div class="formula-block" set:html={ex1Problem} />
+		<p class="note" data-i18n="sSlopeNote">方程式在每一點 (x, y) 都定義了一個斜率。畫出整片斜率場，解曲線就是「順著箭頭方向走」的軌跡。拖動下面的滑桿選一個起點，看看通過那一點的解曲線長什麼樣。</p>
+
+		<div class="card">
+			<div class="chart-controls">
+				<div class="control-row">
+					<label for="ctrlX0" data-i18n="ctrlX0">起點 x₀</label>
+					<input type="range" id="ctrlX0" min="-2.5" max="5.5" value="2" step="0.1" />
+					<output id="outX0">2.0</output>
+				</div>
+				<div class="control-row">
+					<label for="ctrlY0" data-i18n="ctrlY0">起點 y₀</label>
+					<input type="range" id="ctrlY0" min="-5.5" max="5.5" value="3" step="0.1" />
+					<output id="outY0">3.0</output>
+				</div>
+			</div>
+			<svg id="slopeField" viewBox="0 0 640 340" preserveAspectRatio="xMidYMid meet"></svg>
+			<p class="note" id="slopeSolutionText" style="margin-bottom:0"></p>
+		</div>
+	</section>
+
+	<section>
+		<h2 data-i18n="s3Title">4. 動手解：逐步驗證</h2>
 		<p data-i18n="s3p1">求解下列方程式：</p>
 		<div class="formula-block" set:html={ex1Problem} />
 		<p class="note" data-i18n="s3note">不是看解答，是自己解——每一步系統會用數值代入檢查，不對可以再試一次。</p>
@@ -192,7 +229,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 	</section>
 
 	<section>
-		<h2 data-i18n="s4Title">4. 練習一：這是可分離變數方程式嗎？</h2>
+		<h2 data-i18n="s4Title">5. 練習一：這是可分離變數方程式嗎？</h2>
 		<div class="card">
 			<div class="quiz-eq" id="quizEq"></div>
 			<div class="btn-row">
@@ -208,7 +245,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 	</section>
 
 	<section>
-		<h2 data-i18n="s5Title">5. 練習二：計算冷卻溫度</h2>
+		<h2 data-i18n="s5Title">6. 練習二：計算冷卻溫度</h2>
 		<div class="card">
 			<p id="coolProblemText"></p>
 			<div class="numeric-row">
@@ -240,7 +277,12 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				ctrlT0: '初始溫度 T₀ (°C)',
 				ctrlR: '室溫 R (°C)',
 				ctrlK: '冷卻係數 k',
-				s3Title: '3. 動手解：逐步驗證',
+				sSlopeTitle: '3. 方向場：解曲線長什麼樣',
+				sSlopeP1: '求解下列方程式：',
+				sSlopeNote: '方程式在每一點 (x, y) 都定義了一個斜率。畫出整片斜率場，解曲線就是「順著箭頭方向走」的軌跡。拖動下面的滑桿選一個起點，看看通過那一點的解曲線長什麼樣。',
+				ctrlX0: '起點 x₀',
+				ctrlY0: '起點 y₀',
+				s3Title: '4. 動手解：逐步驗證',
 				s3p1: '求解下列方程式：',
 				s3note: '不是看解答，是自己解——每一步系統會用數值代入檢查，不對可以再試一次。',
 				btnHint: '提示',
@@ -274,11 +316,11 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				hintStep1: '格式是 P(y) ; Q(x)。左邊（只含 y）可以填 1/y，右邊（只含 x）可以填 1/(1+x)。',
 				hintStep2: '兩邊分別對 y、x 積分 1/y 和 1/(1+x)，記得加上常數 C。',
 				hintStep3: '先兩邊取 exp，再把絕對值符號處理掉，合併成一個常數 C。',
-				s4Title: '4. 練習一：這是可分離變數方程式嗎？',
+				s4Title: '5. 練習一：這是可分離變數方程式嗎？',
 				btnYes: '是，可分離',
 				btnNo: '不是',
 				btnNext: '下一題',
-				s5Title: '5. 練習二：計算冷卻溫度',
+				s5Title: '6. 練習二：計算冷卻溫度',
 				btnCheck: '檢查答案',
 			},
 			en: {
@@ -296,7 +338,12 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				ctrlT0: 'Initial Temp T₀ (°C)',
 				ctrlR: 'Room Temp R (°C)',
 				ctrlK: 'Cooling Rate k',
-				s3Title: '3. Solve It: Checked Step by Step',
+				sSlopeTitle: '3. Direction Field: What Solution Curves Look Like',
+				sSlopeP1: 'Solve the following equation:',
+				sSlopeNote: "The equation defines a slope at every point (x, y). Plot the whole field, and a solution curve is just a path that follows the arrows. Drag the sliders to pick a starting point and see the solution curve through it.",
+				ctrlX0: 'Start x₀',
+				ctrlY0: 'Start y₀',
+				s3Title: '4. Solve It: Checked Step by Step',
 				s3p1: 'Solve the following equation:',
 				s3note: "This isn't a worked answer to read — you solve it yourself. Each step is checked by numeric substitution; if it's wrong, try again.",
 				btnHint: 'Hint',
@@ -330,11 +377,11 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				hintStep1: 'Format is P(y) ; Q(x). Left side (y only) can be 1/y, right side (x only) can be 1/(1+x).',
 				hintStep2: 'Integrate 1/y w.r.t. y and 1/(1+x) w.r.t. x on each side, and add a constant C.',
 				hintStep3: 'Hint: exponentiate both sides, then absorb the absolute-value signs into one constant C.',
-				s4Title: '4. Practice 1: Is This Equation Separable?',
+				s4Title: '5. Practice 1: Is This Equation Separable?',
 				btnYes: 'Yes, separable',
 				btnNo: 'No',
 				btnNext: 'Next',
-				s5Title: '5. Practice 2: Compute the Cooling Temperature',
+				s5Title: '6. Practice 2: Compute the Cooling Temperature',
 				btnCheck: 'Check Answer',
 			},
 		};
@@ -348,6 +395,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			});
 			renderQuiz();
 			renderNumeric(false);
+			drawSlopeField();
 		}
 		window.addEventListener('langchange', (e: Event) => {
 			lang = (e as CustomEvent).detail.lang;
@@ -408,6 +456,67 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 		}
 		[ctrlT0, ctrlR, ctrlK].forEach((el) => el.addEventListener('input', drawChart));
 		drawChart();
+
+		// ---------- Slope field for (1+x)dy - y dx = 0, i.e. dy/dx = y/(1+x) ----------
+		const fieldSvg = document.getElementById('slopeField') as unknown as SVGSVGElement;
+		const ctrlX0 = document.getElementById('ctrlX0') as HTMLInputElement;
+		const ctrlY0 = document.getElementById('ctrlY0') as HTMLInputElement;
+		const outX0 = document.getElementById('outX0')!;
+		const outY0 = document.getElementById('outY0')!;
+
+		const FW = 640, FH = 340, FPAD = 40;
+		const FX_MIN = -3, FX_MAX = 6, FY_MIN = -6, FY_MAX = 6;
+		const fkx = (FW - 2 * FPAD) / (FX_MAX - FX_MIN);
+		const fky = (FH - 2 * FPAD) / (FY_MAX - FY_MIN);
+		const fxScale = (x: number) => FPAD + (x - FX_MIN) * fkx;
+		const fyScale = (y: number) => FH - FPAD - (y - FY_MIN) * fky;
+
+		function slope(x: number, y: number) {
+			return y / (1 + x);
+		}
+
+		function drawSlopeField() {
+			let x0 = parseFloat(ctrlX0.value);
+			const y0 = parseFloat(ctrlY0.value);
+			if (Math.abs(1 + x0) < 0.12) x0 = x0 < -1 ? -1.12 : -0.88;
+			outX0.textContent = parseFloat(ctrlX0.value).toFixed(1);
+			outY0.textContent = y0.toFixed(1);
+
+			let segments = '';
+			const L = 8;
+			for (let x = Math.ceil(FX_MIN / 0.75) * 0.75; x <= FX_MAX; x += 0.75) {
+				if (Math.abs(1 + x) < 0.2) continue;
+				for (let y = Math.ceil(FY_MIN / 0.75) * 0.75; y <= FY_MAX; y += 0.75) {
+					const m = slope(x, y);
+					const vx = fkx, vy = -fky * m;
+					const len = Math.sqrt(vx * vx + vy * vy) || 1;
+					const ux = (vx / len) * L, uy = (vy / len) * L;
+					const cx = fxScale(x), cy = fyScale(y);
+					segments += `<line class="field-segment" x1="${(cx - ux).toFixed(1)}" y1="${(cy - uy).toFixed(1)}" x2="${(cx + ux).toFixed(1)}" y2="${(cy + uy).toFixed(1)}" />`;
+				}
+			}
+
+			const C = y0 / (1 + x0);
+			const solD = `M${fxScale(FX_MIN).toFixed(1)},${fyScale(C * (1 + FX_MIN)).toFixed(1)} L${fxScale(FX_MAX).toFixed(1)},${fyScale(C * (1 + FX_MAX)).toFixed(1)}`;
+
+			const zeroX = fxScale(0), zeroY = fyScale(0), asymX = fxScale(-1);
+			fieldSvg.innerHTML = `
+				<line class="grid-line" x1="${FPAD}" y1="${zeroY.toFixed(1)}" x2="${FW - FPAD}" y2="${zeroY.toFixed(1)}" />
+				<line class="grid-line" x1="${zeroX.toFixed(1)}" y1="${FPAD}" x2="${zeroX.toFixed(1)}" y2="${FH - FPAD}" />
+				<line class="room-line" x1="${asymX.toFixed(1)}" y1="${FPAD}" x2="${asymX.toFixed(1)}" y2="${FH - FPAD}" />
+				<text class="axis-label" x="${asymX.toFixed(1)}" y="${FPAD - 8}" text-anchor="middle">x = −1</text>
+				${segments}
+				<path class="solution-line" d="${solD}" />
+				<circle class="start-dot" cx="${fxScale(x0).toFixed(1)}" cy="${fyScale(y0).toFixed(1)}" r="5.5" />
+				<text class="axis-label" x="${FW / 2}" y="${FH - 6}" text-anchor="middle">x</text>
+				<text class="axis-label" x="12" y="${FPAD}" text-anchor="start">y</text>
+			`;
+
+			const eqTex = `y = ${C.toFixed(2)}\\,(1+x)`;
+			document.getElementById('slopeSolutionText')!.innerHTML =
+				(lang === 'zh' ? '通過這一點的解：' : 'Solution through this point: ') + renderTexToHtml(eqTex);
+		}
+		[ctrlX0, ctrlY0].forEach((el) => el.addEventListener('input', drawSlopeField));
 
 		// ---------- Solving helper: (1+x)dy - y dx = 0 ----------
 		// Verification is numeric, not string matching: we plug random sample
@@ -748,6 +857,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			// @ts-ignore expose for quiz/state rendering
 			window.katex = mod.default ?? mod;
 			pickQuiz();
+			drawSlopeField();
 		});
 		import('mathjs').then((mod) => {
 			mathjs = mod;
