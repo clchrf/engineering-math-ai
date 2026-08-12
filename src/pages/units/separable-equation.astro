@@ -32,6 +32,22 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 		.katex-display { margin: 0.5em 0; }
 		.note { color: var(--muted); font-size: 0.88rem; }
 
+		/* Opt-in video explainer — collapsed by default so it doesn't load
+		   YouTube's iframe (or slow the page) for students who don't need it. */
+		.video-help { margin-top: 1rem; }
+		.video-help summary {
+			cursor: pointer; font-size: 0.85rem; color: var(--accent); font-weight: 600;
+			list-style: none; display: inline-flex; align-items: center; gap: 0.35rem;
+		}
+		.video-help summary::-webkit-details-marker { display: none; }
+		.video-help summary::before { content: '▸'; font-size: 0.75rem; transition: transform 0.15s ease; }
+		.video-help[open] summary::before { transform: rotate(90deg); }
+		.video-help summary:hover { color: var(--accent-strong); }
+		.video-help[open] summary { margin-bottom: 0.7rem; }
+		.video-embed { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+		.video-embed iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+		.video-credit { font-size: 0.75rem; color: var(--muted-soft); margin-top: 0.45rem; }
+
 		/* Chart */
 		.chart-controls { display: grid; gap: 1rem; margin-bottom: 1.2rem; }
 		.control-row { display: grid; grid-template-columns: 140px 1fr 56px; align-items: center; gap: 0.7rem; }
@@ -133,6 +149,14 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			<p data-i18n="s1proc2">步驟二：兩邊各自積分</p>
 			<div class="formula-block" set:html={eqProcedureStep2} />
 		</div>
+
+		<details class="video-help">
+			<summary data-i18n="videoToggle1">還是不清楚？看影片講解</summary>
+			<div class="video-embed">
+				<iframe src="https://www.youtube-nocookie.com/embed/DL-ozRGDlkY" title="Separable differential equations introduction — Khan Academy" loading="lazy" allowfullscreen></iframe>
+			</div>
+			<p class="video-credit" data-i18n="videoCredit1">影片來源：Khan Academy（英語發音）</p>
+		</details>
 	</section>
 
 	<section>
@@ -187,6 +211,14 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			<svg id="slopeField" viewBox="0 0 640 340" preserveAspectRatio="xMidYMid meet"></svg>
 			<p class="note" id="slopeSolutionText" style="margin-bottom:0"></p>
 		</div>
+
+		<details class="video-help">
+			<summary data-i18n="videoToggle2">還是不清楚？看影片講解方向場</summary>
+			<div class="video-embed">
+				<iframe src="https://www.youtube-nocookie.com/embed/8Amgakx5aII" title="Creating a slope field — Khan Academy" loading="lazy" allowfullscreen></iframe>
+			</div>
+			<p class="video-credit" data-i18n="videoCredit2">影片來源：Khan Academy（英語發音）</p>
+		</details>
 	</section>
 
 	<section>
@@ -270,6 +302,10 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				s1procTitle: '解題步驟',
 				s1proc1: '步驟一：把 x、y 各自的項分離到等號兩側',
 				s1proc2: '步驟二：兩邊各自積分',
+				videoToggle1: '還是不清楚？看影片講解',
+				videoCredit1: '影片來源：Khan Academy（英語發音）',
+				videoToggle2: '還是不清楚？看影片講解方向場',
+				videoCredit2: '影片來源：Khan Academy（英語發音）',
 				s2Title: '2. 範例：牛頓冷卻定律',
 				s2p1: '咖啡的溫度變化速率,正比於「目前溫度」與「室溫」之間的差距,這就是一個典型的可分離變數方程式：',
 				s2p2: '解開之後可以得到溫度隨時間變化的公式：',
@@ -302,14 +338,22 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				errParse: '這個算式無法解析，檢查一下語法（乘法要用 *，例如 1/(1+x)）。',
 				errNeedSemicolon: '請用分號分隔兩邊，格式是「P(y) ; Q(x)」。',
 				errStep1Mismatch: '這樣分離後跟原方程式不一致，再檢查一次。',
+				errStep1Sign: '很接近了——這樣分離後跟原方程式只差一個負號，檢查一下哪裡變號了。',
+				errStep1Scale: '很接近了——這樣分離後跟原方程式差了一個倍數，檢查一下有沒有多乘或少除了什麼。',
 				errStep1LeftHasX: '左邊應該只能有 y，不能出現 x。',
 				errStep1RightHasY: '右邊應該只能有 x，不能出現 y。',
 				okStep1: '正確，這是分離變數後的形式。',
 				errNeedEquals: '請用一個等號分隔左右兩邊，例如 ln(y) = ln(1+x) + C。',
+				errStep2MissingC: '別忘了加上積分常數 C——兩邊個別積分後，通常會多一個常數項。',
 				errStep2Left: '左邊對 y 微分後應該要等於第一步的左式，再檢查一次。',
+				errStep2LeftSign: '很接近了——左邊的積分結果只差一個負號，檢查一下正負號。',
+				errStep2LeftScale: '很接近了——左邊的積分結果差了一個倍數，檢查一下係數。',
 				errStep2Right: '右邊對 x 微分後應該要等於第一步的右式，再檢查一次。',
+				errStep2RightSign: '很接近了——右邊的積分結果只差一個負號，檢查一下正負號。',
+				errStep2RightScale: '很接近了——右邊的積分結果差了一個倍數，檢查一下係數。',
 				okStep2: '正確，積分結果沒問題。',
 				errNeedYEquals: '請用「y = ...」的形式作答。',
+				errStep3StillLog: '看起來式子裡還留著 ln 或 log，記得要把兩邊取指數（exp）才能解出 y。',
 				errStep3NoC: '答案裡要包含常數 C（這是通解，不是特解）。',
 				errStep3Mismatch: '代回原方程式對不起來，再檢查一次。',
 				okStep3: '正確，這就是通解。',
@@ -331,6 +375,10 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				s1procTitle: 'Solving Procedure',
 				s1proc1: 'Step 1: Separate the x-terms and y-terms to opposite sides',
 				s1proc2: 'Step 2: Integrate both sides',
+				videoToggle1: 'Still unclear? Watch a video explanation',
+				videoCredit1: 'Video: Khan Academy',
+				videoToggle2: 'Still unclear? Watch a video on slope fields',
+				videoCredit2: 'Video: Khan Academy',
 				s2Title: "2. Example: Newton's Law of Cooling",
 				s2p1: "The rate at which a cup of coffee cools is proportional to the difference between its current temperature and room temperature — a classic separable equation:",
 				s2p2: 'Solving it gives the temperature as a function of time:',
@@ -363,14 +411,22 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				errParse: "Couldn't parse that — check your syntax (use * for multiplication, e.g. 1/(1+x)).",
 				errNeedSemicolon: 'Separate the two sides with a semicolon, as "P(y) ; Q(x)".',
 				errStep1Mismatch: "That separation doesn't match the original equation — check again.",
+				errStep1Sign: "Close — that separation is off by a sign from the original equation. Check where a sign might have flipped.",
+				errStep1Scale: "Close — that separation is off by a constant factor from the original equation. Check for an extra multiply or divide.",
 				errStep1LeftHasX: 'The left side should only contain y, not x.',
 				errStep1RightHasY: 'The right side should only contain x, not y.',
 				okStep1: "Correct — that's the separated form.",
 				errNeedEquals: 'Separate the two sides with a single "=", e.g. ln(y) = ln(1+x) + C.',
+				errStep2MissingC: "Don't forget the constant of integration C — integrating each side separately usually leaves one behind.",
 				errStep2Left: "The derivative of the left side w.r.t. y should match step 1's left side — check again.",
+				errStep2LeftSign: "Close — the left side's integral is off by a sign. Check your signs.",
+				errStep2LeftScale: "Close — the left side's integral is off by a constant factor. Check your coefficients.",
 				errStep2Right: "The derivative of the right side w.r.t. x should match step 1's right side — check again.",
+				errStep2RightSign: "Close — the right side's integral is off by a sign. Check your signs.",
+				errStep2RightScale: "Close — the right side's integral is off by a constant factor. Check your coefficients.",
 				okStep2: 'Correct, the integration checks out.',
 				errNeedYEquals: 'Answer in the form "y = ...".',
+				errStep3StillLog: "There's still a ln or log in there — exponentiate both sides to solve for y.",
 				errStep3NoC: 'Your answer should include the constant C (this is the general solution, not a particular one).',
 				errStep3Mismatch: "Substituting back into the original equation doesn't check out — try again.",
 				okStep3: "Correct — that's the general solution.",
@@ -547,19 +603,37 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				return null;
 			}
 		}
+		// Classifies how a set of "actual/expected" ratios deviates from 1, so we
+		// can tell a sign slip (~-1) or a scaling slip (constant but not ±1) apart
+		// from a genuinely different (structurally wrong) expression. This is the
+		// same idea as "common wrong answer" diagnostics used by platforms like
+		// Khan Academy/WeBWorK — anticipate the usual slips and name them,
+		// entirely from the numbers, no LLM involved.
+		function classifyDiscrepancy(ratios: number[]): 'ok' | 'sign' | 'scale' | 'mismatch' {
+			const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+			const consistent = ratios.every((r) => Math.abs(r - mean) < 0.02 * Math.max(1, Math.abs(mean)) + 1e-4);
+			if (!consistent) return 'mismatch';
+			if (Math.abs(mean - 1) < 1e-3) return 'ok';
+			if (Math.abs(mean + 1) < 0.03) return 'sign';
+			return 'scale';
+		}
+
 		function checkStep1(pStr: string, qStr: string) {
 			if (!pStr.trim() || !qStr.trim()) return { ok: false, msgKey: 'errEmpty' };
+			const ratios: number[] = [];
 			for (let i = 0; i < 5; i++) {
 				const { x, y } = randDomainPoint();
 				const pVal = evalSafe(pStr, { y, x });
 				const qVal = evalSafe(qStr, { x, y });
 				if (pVal === null || qVal === null || pVal === 0) return { ok: false, msgKey: 'errParse' };
 				const expected = y / (1 + x);
-				const ratio = qVal / pVal;
-				if (Math.abs(ratio - expected) > 1e-4 * Math.max(1, Math.abs(expected))) {
-					return { ok: false, msgKey: 'errStep1Mismatch' };
-				}
+				ratios.push(qVal / pVal / expected);
 			}
+			const verdict = classifyDiscrepancy(ratios);
+			if (verdict === 'sign') return { ok: false, msgKey: 'errStep1Sign' };
+			if (verdict === 'scale') return { ok: false, msgKey: 'errStep1Scale' };
+			if (verdict === 'mismatch') return { ok: false, msgKey: 'errStep1Mismatch' };
+
 			const { x, y } = randDomainPoint();
 			const p1 = evalSafe(pStr, { y, x });
 			const p2 = evalSafe(pStr, { y, x: x + 1.7 });
@@ -579,6 +653,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			const lhs = parts[0].trim();
 			const rhs = parts[1].trim();
 			if (!lhs || !rhs) return { ok: false, msgKey: 'errEmpty' };
+			if (!/\bC\b/.test(lhs) && !/\bC\b/.test(rhs)) return { ok: false, msgKey: 'errStep2MissingC' };
 			let dLhsStr: string, dRhsStr: string;
 			try {
 				dLhsStr = mathjs.derivative(normalizeExpr(lhs), 'y').toString();
@@ -586,22 +661,30 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			} catch {
 				return { ok: false, msgKey: 'errParse' };
 			}
+			const leftRatios: number[] = [];
 			for (let i = 0; i < 4; i++) {
 				const { y } = randDomainPoint();
 				const dv = evalSafe(dLhsStr, { y });
-				const expected = 1 / y;
-				if (dv === null || Math.abs(dv - expected) > 1e-4 * Math.max(1, Math.abs(expected))) {
-					return { ok: false, msgKey: 'errStep2Left' };
-				}
+				if (dv === null) return { ok: false, msgKey: 'errParse' };
+				leftRatios.push(dv / (1 / y));
 			}
+			const leftVerdict = classifyDiscrepancy(leftRatios);
+			if (leftVerdict === 'sign') return { ok: false, msgKey: 'errStep2LeftSign' };
+			if (leftVerdict === 'scale') return { ok: false, msgKey: 'errStep2LeftScale' };
+			if (leftVerdict === 'mismatch') return { ok: false, msgKey: 'errStep2Left' };
+
+			const rightRatios: number[] = [];
 			for (let i = 0; i < 4; i++) {
 				const { x } = randDomainPoint();
 				const dv = evalSafe(dRhsStr, { x });
-				const expected = 1 / (1 + x);
-				if (dv === null || Math.abs(dv - expected) > 1e-4 * Math.max(1, Math.abs(expected))) {
-					return { ok: false, msgKey: 'errStep2Right' };
-				}
+				if (dv === null) return { ok: false, msgKey: 'errParse' };
+				rightRatios.push(dv / (1 / (1 + x)));
 			}
+			const rightVerdict = classifyDiscrepancy(rightRatios);
+			if (rightVerdict === 'sign') return { ok: false, msgKey: 'errStep2RightSign' };
+			if (rightVerdict === 'scale') return { ok: false, msgKey: 'errStep2RightScale' };
+			if (rightVerdict === 'mismatch') return { ok: false, msgKey: 'errStep2Right' };
+
 			return { ok: true, msgKey: 'okStep2' };
 		}
 		function checkStep3(fullStr: string) {
@@ -609,6 +692,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			if (parts.length !== 2 || parts[0].trim() !== 'y') return { ok: false, msgKey: 'errNeedYEquals' };
 			const rhs = parts[1].trim();
 			if (!rhs) return { ok: false, msgKey: 'errEmpty' };
+			if (/\b(ln|log)\s*\(/.test(rhs)) return { ok: false, msgKey: 'errStep3StillLog' };
 			let dRhsStr: string;
 			try {
 				dRhsStr = mathjs.derivative(normalizeExpr(rhs), 'x').toString();
