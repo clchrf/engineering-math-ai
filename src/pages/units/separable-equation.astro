@@ -48,6 +48,34 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 		.video-embed iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 		.video-credit { font-size: 0.75rem; color: var(--muted-soft); margin-top: 0.45rem; }
 
+		/* Concept glossary: chips open an in-page modal so you never lose your place */
+		.concept-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; }
+		.concept-chips-label { font-size: 0.8rem; color: var(--muted); margin-right: 0.15rem; }
+		.concept-chip {
+			border: 1px dashed var(--border); background: var(--card-soft); color: var(--accent-strong);
+			padding: 0.32rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+			cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+		}
+		.concept-chip:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+		.concept-modal-backdrop {
+			position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex;
+			align-items: center; justify-content: center; padding: 1.25rem; z-index: 50;
+		}
+		.concept-modal-backdrop[hidden] { display: none; }
+		.concept-modal {
+			background: var(--card); border-radius: var(--radius); max-width: 32rem; width: 100%;
+			max-height: 80vh; overflow-y: auto; padding: 1.6rem 1.75rem; position: relative;
+			box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.35);
+		}
+		.concept-modal h3 { margin: 0 0 0.8rem; font-size: 1.1rem; padding-right: 1.5rem; }
+		.concept-modal p { font-size: 0.92rem; line-height: 1.7; color: var(--fg); margin: 0; }
+		.concept-modal-close {
+			position: absolute; top: 1rem; right: 1.1rem; border: none; background: none;
+			font-size: 1.4rem; line-height: 1; color: var(--muted); cursor: pointer; padding: 0.2rem;
+		}
+		.concept-modal-close:hover { color: var(--fg); }
+
 		/* Chart */
 		.chart-controls { display: grid; gap: 1rem; margin-bottom: 1.2rem; }
 		.control-row { display: grid; grid-template-columns: 140px 1fr 56px; align-items: center; gap: 0.7rem; }
@@ -157,6 +185,14 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 			</div>
 			<p class="video-credit" data-i18n="videoCredit1">影片來源：Khan Academy（英語發音）</p>
 		</details>
+
+		<div class="concept-chips">
+			<span class="concept-chips-label" data-i18n="conceptsLabel">名詞看不懂？點一下：</span>
+			<button type="button" class="concept-chip" data-concept="de" data-i18n="conceptTitle-de">微分方程式</button>
+			<button type="button" class="concept-chip" data-concept="general-particular" data-i18n="conceptTitle-general-particular">通解與特解</button>
+			<button type="button" class="concept-chip" data-concept="const-of-integration" data-i18n="conceptTitle-const-of-integration">積分常數 C</button>
+			<button type="button" class="concept-chip" data-concept="implicit-explicit" data-i18n="conceptTitle-implicit-explicit">隱函數與顯函數</button>
+		</div>
 	</section>
 
 	<section>
@@ -290,8 +326,20 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 		</div>
 	</section>
 
+	<div class="concept-modal-backdrop" id="conceptBackdrop" hidden>
+		<div class="concept-modal" role="dialog" aria-modal="true" aria-labelledby="conceptModalTitle">
+			<button type="button" class="concept-modal-close" id="conceptClose" aria-label="Close">&times;</button>
+			<h3 id="conceptModalTitle"></h3>
+			<div id="conceptModalBody"></div>
+		</div>
+	</div>
+
 	<script>
 		import { getStoredLang, type Lang } from '../../lib/i18n';
+		import { setUnitStatus } from '../../lib/progress';
+
+		const UNIT_ID = 'separable-equation';
+		setUnitStatus(UNIT_ID, 'in_progress');
 
 		const dict: Record<Lang, Record<string, string>> = {
 			zh: {
@@ -306,6 +354,11 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				videoCredit1: '影片來源：Khan Academy（英語發音）',
 				videoToggle2: '還是不清楚？看影片講解方向場',
 				videoCredit2: '影片來源：Khan Academy（英語發音）',
+				conceptsLabel: '名詞看不懂？點一下：',
+				'conceptTitle-de': '微分方程式',
+				'conceptTitle-general-particular': '通解與特解',
+				'conceptTitle-const-of-integration': '積分常數 C',
+				'conceptTitle-implicit-explicit': '隱函數與顯函數',
 				s2Title: '2. 範例：牛頓冷卻定律',
 				s2p1: '咖啡的溫度變化速率,正比於「目前溫度」與「室溫」之間的差距,這就是一個典型的可分離變數方程式：',
 				s2p2: '解開之後可以得到溫度隨時間變化的公式：',
@@ -379,6 +432,11 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 				videoCredit1: 'Video: Khan Academy',
 				videoToggle2: 'Still unclear? Watch a video on slope fields',
 				videoCredit2: 'Video: Khan Academy',
+				conceptsLabel: 'Unfamiliar term? Click it:',
+				'conceptTitle-de': 'Differential Equation',
+				'conceptTitle-general-particular': 'General vs. Particular Solution',
+				'conceptTitle-const-of-integration': 'Constant of Integration C',
+				'conceptTitle-implicit-explicit': 'Implicit vs. Explicit Form',
 				s2Title: "2. Example: Newton's Law of Cooling",
 				s2p1: "The rate at which a cup of coffee cools is proportional to the difference between its current temperature and room temperature — a classic separable equation:",
 				s2p2: 'Solving it gives the temperature as a function of time:',
@@ -443,6 +501,50 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 		};
 
 		let lang: Lang = getStoredLang();
+
+		// ---------- Concept glossary ----------
+		// "Click a hard concept, get the fuller explanation" without leaving the
+		// page — an in-page modal rather than a navigation, so you never lose
+		// your spot in the lecture.
+		const conceptGlossary: Record<string, Record<Lang, string>> = {
+			de: {
+				zh: '一個「方程式」，裡面除了未知函數 y 本身，還包含 y 的導數（例如 dy/dx）。解微分方程式，就是要找出滿足這個關係的函數 y(x) 本身，而不是找一個數字。例如 dy/dx = y/(1+x) 就是一個微分方程式，答案是一整個函數 y = C(1+x)，不是一個數字。',
+				en: 'An equation that involves not just the unknown function y, but also its derivatives (like dy/dx). Solving one means finding the function y(x) itself that satisfies the relationship — not a single number. For example, dy/dx = y/(1+x) is a differential equation; its answer is a whole function, y = C(1+x), not a number.',
+			},
+			'general-particular': {
+				zh: '通解（general solution）是包含任意常數 C 的完整解，代表「所有」滿足這個微分方程式的函數，例如 y = C(1+x)。特解（particular solution）則是給定初始條件（例如 y(0) = 5）之後，代入求出特定的 C 值，得到「一條」具體的曲線。同一個微分方程式的通解只有一個，但特解可以有無限多條，取決於初始條件。',
+				en: 'The general solution (with an arbitrary constant C, like y = C(1+x)) represents every function that satisfies the differential equation. A particular solution is what you get after plugging in an initial condition (like y(0) = 5) to solve for a specific C — one concrete curve out of that whole family. There’s only one general solution, but infinitely many particular ones.',
+			},
+			'const-of-integration': {
+				zh: '對一個函數積分時，導數為 0 的常數項會「消失」，所以逆運算（積分）沒辦法把它找回來——只能用一個未知的常數 C 代表「所有可能遺漏掉的常數」。這就是為什麼解微分方程式時，兩邊積分完一定要加上 +C，少了它，你只找到其中一條解，而不是全部的解。',
+				en: 'When you differentiate a function, any constant term vanishes (its derivative is 0) — so integrating can’t recover it. That’s what the +C stands for: "whatever constant might have been there." Forget it when integrating both sides of a differential equation, and you only find one solution instead of the whole family.',
+			},
+			'implicit-explicit': {
+				zh: '顯函數（explicit）長得像「y = ...」，可以直接代入 x 算出 y。隱函數（implicit）像 ln|y| = ln|1+x| + C，y 被「藏」在算式裡面，沒有直接寫出來。解微分方程式時，積分後常常會先得到隱函數形式，需要再做一步代數（例如兩邊取 exp）才能整理成顯函數，方便之後計算或畫圖。',
+				en: 'An explicit form looks like "y = ...", where you can plug in x and get y directly. An implicit form, like ln|y| = ln|1+x| + C, has y "hidden" inside the equation rather than isolated. After integrating a differential equation you often land in implicit form first, and need one more algebra step (like exponentiating both sides) to reach the explicit form that’s easier to compute or graph with.',
+			},
+		};
+		function openConcept(id: string) {
+			const entry = conceptGlossary[id];
+			if (!entry) return;
+			const titleKey = `conceptTitle-${id}`;
+			document.getElementById('conceptModalTitle')!.textContent = dict[lang][titleKey] ?? id;
+			document.getElementById('conceptModalBody')!.innerHTML = `<p>${entry[lang]}</p>`;
+			document.getElementById('conceptBackdrop')!.hidden = false;
+		}
+		function closeConcept() {
+			document.getElementById('conceptBackdrop')!.hidden = true;
+		}
+		document.querySelectorAll<HTMLElement>('.concept-chip').forEach((btn) => {
+			btn.addEventListener('click', () => openConcept(btn.dataset.concept!));
+		});
+		document.getElementById('conceptClose')!.addEventListener('click', closeConcept);
+		document.getElementById('conceptBackdrop')!.addEventListener('click', (e) => {
+			if ((e.target as HTMLElement).id === 'conceptBackdrop') closeConcept();
+		});
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') closeConcept();
+		});
 
 		function applyLang() {
 			document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
@@ -817,6 +919,7 @@ const ex1Problem = tex('(1+x)\\,dy - y\\,dx = 0', true);
 					currentSolverStep = 4;
 					document.getElementById('solverPrompt')!.textContent = dict[lang]['solverDoneMsg'] ?? '';
 					saveSolverProgress(true);
+					setUnitStatus(UNIT_ID, 'completed');
 				}
 			}
 		}

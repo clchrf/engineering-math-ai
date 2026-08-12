@@ -38,6 +38,8 @@ const base = import.meta.env.BASE_URL;
 		.unit-blurb { color: var(--muted); font-size: 0.85rem; line-height: 1.55; flex: 1; }
 		.unit-status { font-size: 0.78rem; font-weight: 600; }
 		.unit-status.ready { color: var(--accent); }
+		.unit-status.progress { color: var(--accent); }
+		.unit-status.done { color: var(--good); }
 		.unit-status.soon { color: var(--muted-soft); }
 
 		[data-lang] { display: none; }
@@ -64,7 +66,7 @@ const base = import.meta.env.BASE_URL;
 				{units.filter((u) => u.category === cat.id).map((unit, i) => {
 					const CardTag = unit.href ? 'a' : 'div';
 					return (
-						<CardTag class={`unit-card card ${unit.href ? '' : 'locked'}`} href={unit.href ? base + unit.href.replace(/^\//, '') : undefined}>
+						<CardTag class={`unit-card card ${unit.href ? '' : 'locked'}`} href={unit.href ? base + unit.href.replace(/^\//, '') : undefined} data-unit-id={unit.id}>
 							<span class="unit-num">{String(catIdx + 1)}.{i + 1}</span>
 							<div class="unit-title">
 								<span data-lang="zh" class="lang-active">{unit.title}</span>
@@ -75,7 +77,7 @@ const base = import.meta.env.BASE_URL;
 								<span data-lang="en">{unit.blurbEn}</span>
 							</div>
 							{unit.href ? (
-								<span class="unit-status ready">
+								<span class="unit-status ready" data-role="status">
 									<span data-lang="zh" class="lang-active">可以開始 →</span>
 									<span data-lang="en">Ready to start →</span>
 								</span>
@@ -94,17 +96,24 @@ const base = import.meta.env.BASE_URL;
 
 	<script>
 		import { getStoredLang, type Lang } from '../lib/i18n';
+		import { getUnitStatus, type UnitStatus } from '../lib/progress';
 
 		const dict: Record<Lang, Record<string, string>> = {
 			zh: {
 				heroTitle: '工程數學',
 				heroSub: '跟著單元練習可分離變數方程式、Laplace 轉換、傅立葉級數。每一步由系統代入數值檢查，不是對照解答，是真的解出來。',
 				progressLabel: '課程進度',
+				statusReady: '可以開始 →',
+				statusProgress: '進行中 →',
+				statusDone: '✓ 已完成',
 			},
 			en: {
 				heroTitle: 'Engineering Mathematics',
 				heroSub: 'Work through separable equations, Laplace transforms, and Fourier series. Every step is checked by numeric substitution — not matched against an answer key, actually solved.',
 				progressLabel: 'Course progress',
+				statusReady: 'Ready to start →',
+				statusProgress: 'In progress →',
+				statusDone: '✓ Completed',
 			},
 		};
 
@@ -117,6 +126,29 @@ const base = import.meta.env.BASE_URL;
 			document.querySelectorAll<HTMLElement>('[data-lang]').forEach((el) => {
 				el.classList.toggle('lang-active', el.dataset.lang === lang);
 			});
+			renderProgress(lang);
+		}
+
+		function renderProgress(lang: Lang) {
+			const cards = document.querySelectorAll<HTMLElement>('[data-unit-id]');
+			let completed = 0;
+			cards.forEach((card) => {
+				const unitId = card.dataset.unitId!;
+				const status: UnitStatus = getUnitStatus(unitId);
+				if (status === 'completed') completed++;
+				const statusEl = card.querySelector<HTMLElement>('[data-role="status"]');
+				if (!statusEl) return;
+				statusEl.classList.remove('ready', 'progress', 'done');
+				const cls = status === 'completed' ? 'done' : status === 'in_progress' ? 'progress' : 'ready';
+				const key = status === 'completed' ? 'statusDone' : status === 'in_progress' ? 'statusProgress' : 'statusReady';
+				statusEl.classList.add(cls);
+				statusEl.textContent = dict[lang][key];
+			});
+			const fill = document.querySelector<HTMLElement>('.progress-fill');
+			const label = document.querySelector<HTMLElement>('.progress-line strong');
+			const total = cards.length || 1;
+			if (fill) fill.style.width = `${(completed / total) * 100}%`;
+			if (label) label.textContent = `${completed} / ${total}`;
 		}
 
 		let lang: Lang = getStoredLang();
